@@ -8,9 +8,12 @@ from unittest.mock import patch
 SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from xhs.errors import PublishError  # noqa: E402
-from xhs.publish import (  # noqa: E402
-    _assert_topics_preserved, _input_single_tag, _input_tags, publish_image_content,
+from xhs.errors import PublishError
+from xhs.publish import (
+    _assert_topics_preserved,
+    _input_single_tag,
+    _input_tags,
+    publish_image_content,
 )
 
 
@@ -51,9 +54,7 @@ class FakePage:
             wrapped_html = "".join(f"<span>#{tag}</span> " for tag in self.wrapped)
             handled = self.current_tag in self.committed or self.current_tag in self.wrapped
             raw_html = "" if handled else f"#{self.current_tag}"
-            candidates = [
-                f"<a>#{tag}</a>" for tag in self.committed if tag == self.current_tag
-            ]
+            candidates = [f"<a>#{tag}</a>" for tag in self.committed if tag == self.current_tag]
             return {
                 "html": f"<p>{committed_html}{wrapped_html}{raw_html}</p>",
                 "text": "".join(self.typed),
@@ -68,9 +69,7 @@ class FakePage:
 
     def type_text(self, text: str, delay_ms: int = 50) -> None:
         self.typed.append(text)
-        if text == "#":
-            self.current_tag = ""
-        elif text == " ":
+        if text == "#" or text == " ":
             self.current_tag = ""
         else:
             self.current_tag += text
@@ -99,6 +98,7 @@ class FakePage:
     def click_element_by_text(self, selector: str, text: str) -> None:
         self.click_element(selector)
 
+
 class PublishTagTests(unittest.TestCase):
     @patch("xhs.publish.time.sleep", return_value=None)
     def test_input_single_tag_commits_then_separates(self, _sleep) -> None:
@@ -122,9 +122,11 @@ class PublishTagTests(unittest.TestCase):
             return next(values, 30.0)
 
         page = FakePage([], suggestion_available=False)
-        with patch("xhs.publish.time.monotonic", side_effect=fake_monotonic):
-            with self.assertRaisesRegex(PublishError, "未找到匹配的标签联想"):
-                _input_single_tag(page, "div.ql-editor", "AI研究")
+        with (
+            patch("xhs.publish.time.monotonic", side_effect=fake_monotonic),
+            self.assertRaisesRegex(PublishError, "未找到匹配的标签联想"),
+        ):
+            _input_single_tag(page, "div.ql-editor", "AI研究")
 
     @patch("xhs.publish.time.sleep", return_value=None)
     def test_input_single_tag_raises_when_click_does_not_commit(self, _sleep) -> None:
@@ -134,9 +136,11 @@ class PublishTagTests(unittest.TestCase):
             return next(values, 30.0)
 
         page = FakePage(click_effective=False)
-        with patch("xhs.publish.time.monotonic", side_effect=fake_monotonic):
-            with self.assertRaisesRegex(PublishError, "标签联想点击未生效"):
-                _input_single_tag(page, "div.ql-editor", "AI研究")
+        with (
+            patch("xhs.publish.time.monotonic", side_effect=fake_monotonic),
+            self.assertRaisesRegex(PublishError, "标签联想点击未生效"),
+        ):
+            _input_single_tag(page, "div.ql-editor", "AI研究")
 
     @patch("xhs.publish.time.sleep", return_value=None)
     def test_input_single_tag_rejects_stale_suggestion(self, _sleep) -> None:
@@ -146,9 +150,11 @@ class PublishTagTests(unittest.TestCase):
             return next(values, 30.0)
 
         page = FakePage(suggestion_text="#旧标签")
-        with patch("xhs.publish.time.monotonic", side_effect=fake_monotonic):
-            with self.assertRaisesRegex(PublishError, "未找到匹配的标签联想"):
-                _input_single_tag(page, "div.ql-editor", "AI研究")
+        with (
+            patch("xhs.publish.time.monotonic", side_effect=fake_monotonic),
+            self.assertRaisesRegex(PublishError, "未找到匹配的标签联想"),
+        ):
+            _input_single_tag(page, "div.ql-editor", "AI研究")
 
     @patch("xhs.publish.time.sleep", return_value=None)
     def test_input_single_tag_rejects_longer_topic_for_short_tag(self, _sleep) -> None:
@@ -158,17 +164,21 @@ class PublishTagTests(unittest.TestCase):
             return next(values, 30.0)
 
         page = FakePage(suggestion_text="#AI研究")
-        with patch("xhs.publish.time.monotonic", side_effect=fake_monotonic):
-            with self.assertRaisesRegex(PublishError, "未找到匹配的标签联想"):
-                _input_single_tag(page, "div.ql-editor", "AI")
+        with (
+            patch("xhs.publish.time.monotonic", side_effect=fake_monotonic),
+            self.assertRaisesRegex(PublishError, "未找到匹配的标签联想"),
+        ):
+            _input_single_tag(page, "div.ql-editor", "AI")
 
     @patch("xhs.publish.time.sleep", return_value=None)
     def test_input_single_tag_rejects_plain_span_wrapper(self, _sleep) -> None:
         page = FakePage(semantic_click=False)
         values = iter([0.0, 0.0, 0.0, 0.0, 30.0])
-        with patch("xhs.publish.time.monotonic", side_effect=lambda: next(values, 30.0)):
-            with self.assertRaises(PublishError):
-                _input_single_tag(page, "div.ql-editor", "AI研究")
+        with (
+            patch("xhs.publish.time.monotonic", side_effect=lambda: next(values, 30.0)),
+            self.assertRaises(PublishError),
+        ):
+            _input_single_tag(page, "div.ql-editor", "AI研究")
 
     @patch("xhs.publish.time.sleep", return_value=None)
     def test_input_tags_commits_five_topics_in_order(self, _sleep) -> None:
@@ -198,11 +208,13 @@ class PublishTagTests(unittest.TestCase):
             _assert_topics_preserved(page, "div.ql-editor", ["数学"])
 
     def test_failed_fill_never_clicks_publish(self) -> None:
-        with patch("xhs.publish.fill_publish_form", side_effect=PublishError("标签失败")):
-            with patch("xhs.publish.click_publish_button") as click:
-                with self.assertRaises(PublishError):
-                    publish_image_content(FakePage(), None)
-                click.assert_not_called()
+        with (
+            patch("xhs.publish.fill_publish_form", side_effect=PublishError("标签失败")),
+            patch("xhs.publish.click_publish_button") as click,
+            self.assertRaises(PublishError),
+        ):
+            publish_image_content(FakePage(), None)
+        click.assert_not_called()
 
 
 if __name__ == "__main__":

@@ -26,13 +26,11 @@ from .selectors import (
     ORIGINAL_SWITCH,
     ORIGINAL_SWITCH_CARD,
     POPOVER,
-    PUBLISH_BUTTON,
     SCHEDULE_SWITCH,
     TAG_FIRST_ITEM,
     TAG_TOPIC_CONTAINER,
     TITLE_INPUT,
     TITLE_MAX_SUFFIX,
-    UPLOAD_CONTENT,
     UPLOAD_INPUT,
     VISIBILITY_DROPDOWN,
     VISIBILITY_OPTIONS,
@@ -365,7 +363,8 @@ def _click_publish_tab(page: Page, tab_name: str) -> None:
 
                 // 真 tab：有 data-hp-bound + 无 hp 陷阱属性 + 在视口里
                 for (const t of tabs) {{
-                    if (t.hasAttribute('data-hp-kind') || t.hasAttribute('button-hp-installed')) continue;
+                    if (t.hasAttribute('data-hp-kind') ||
+                        t.hasAttribute('button-hp-installed')) continue;
                     if (!t.hasAttribute('data-hp-bound')) continue;
                     const title = t.querySelector('span.title');
                     if (!title || title.textContent.trim() !== name) continue;
@@ -377,7 +376,8 @@ def _click_publish_tab(page: Page, tab_name: str) -> None:
 
                 // 兜底 1：无 hp 陷阱属性 + 在视口内（兼容 XHS 未来去掉 data-hp-bound）
                 for (const t of tabs) {{
-                    if (t.hasAttribute('data-hp-kind') || t.hasAttribute('button-hp-installed')) continue;
+                    if (t.hasAttribute('data-hp-kind') ||
+                        t.hasAttribute('button-hp-installed')) continue;
                     const title = t.querySelector('span.title');
                     if (!title || title.textContent.trim() !== name) continue;
                     const r = t.getBoundingClientRect();
@@ -401,7 +401,8 @@ def _click_publish_tab(page: Page, tab_name: str) -> None:
                         // 找视口内 + 无 hp 陷阱 + active 的 tab，取它的 title
                         const tabs = document.querySelectorAll({json.dumps(CREATOR_TAB)});
                         for (const t of tabs) {{
-                            if (t.hasAttribute('data-hp-kind') || t.hasAttribute('button-hp-installed')) continue;
+                            if (t.hasAttribute('data-hp-kind') ||
+                                t.hasAttribute('button-hp-installed')) continue;
                             if (!t.classList.contains('active')) continue;
                             const r = t.getBoundingClientRect();
                             if (r.left < -1000 || r.top < -1000) continue;
